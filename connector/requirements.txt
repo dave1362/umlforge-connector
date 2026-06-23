@@ -1,0 +1,12 @@
+# UML Forge — MCP Connector Dependencies
+# Installed on developer's machine
+# Python 3.12.x required (tomllib is stdlib in 3.11+, no extra dep needed)
+
+# ── MCP ────────────────────────────────────────────────
+mcp[cli]>=1.27.0,<2.0.0
+
+# ── HTTP Client ────────────────────────────────────────
+httpx>=0.27.0,<1.0.0
+
+# ── Data Validation ────────────────────────────────────
+pydantic>=2.7.0,<3.0.0

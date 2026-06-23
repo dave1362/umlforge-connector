@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dave1362/umlforge",
+  "title": "UML Forge",
+  "description": "AI-powered UML diagram generation for coding agents. 13 specialised tools, Mermaid output.",
+  "repository": {
+    "url": "https://github.com/dave1362/uml-forge",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "umlforge",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "UMLFORGE_API_KEY",
+          "description": "Your UML Forge API key — get one free at https://umlforge.dev",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "umlforge"
+version = "0.1.1"
+description = "UML Forge MCP connector — AI-powered UML diagram generation for coding agents"
+readme = "connector/README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+keywords = [
+    "uml", "mcp", "diagram", "architecture", "ai",
+    "claude", "cursor", "sequence-diagram", "class-diagram",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "mcp[cli]>=1.27.0,<2.0.0",
+    "httpx>=0.27.0,<1.0.0",
+    "pydantic>=2.7.0,<3.0.0",
+]
+
+[project.scripts]
+umlforge = "connector.__main__:main"
+
+[project.urls]
+Homepage = "https://umlforge.dev"
+Documentation = "https://umlforge.dev/docs"
+
+[tool.hatch.build.targets.wheel]
+# Only ship the connector — api/ and dashboard/ stay server-side
+packages = ["connector"]
