@@ -38,6 +38,7 @@ async def umlforge_reverse_engineer(
     codebase: str = "",
     github_url: str | None = None,
     max_nodes: int = 20,
+    report_mode: bool = False,
 ) -> str:
     """
     Reverse-engineer a codebase into UML class, sequence, and state diagrams.
@@ -47,6 +48,10 @@ async def umlforge_reverse_engineer(
     - Sequence diagram: primary execution flow or dominant use case
     - State diagram: entity lifecycle (if stateful entities are found)
     - Architectural smell flags: god classes, circular deps, anemic models
+
+    Pro/Team/Enterprise: set report_mode=True to also receive an Architectural
+    Intelligence Report — a plain-English document with system overview,
+    key findings, modernisation recommendations, and a health score (A-F).
 
     Best for: legacy system audits, onboarding, code review preparation,
     technical debt assessment.
@@ -66,11 +71,18 @@ async def umlforge_reverse_engineer(
                     to analyse (public repos or repos you own/have access to).
         max_nodes: Maximum classes/components per diagram (default 20).
                    Increase for large codebases; decrease for readability.
+        report_mode: When True, generate an Architectural Intelligence Report
+                     alongside the diagrams. Pro/Team/Enterprise tier only.
     """
     config = load_config()
     return await api_client.generate(
         "umlforge_reverse_engineer",
-        {"codebase": codebase, "github_url": github_url, "max_nodes": max_nodes},
+        {
+            "codebase": codebase,
+            "github_url": github_url,
+            "max_nodes": max_nodes,
+            "report_mode": report_mode,
+        },
         guided_mode=config.guided_mode,
     )
 
@@ -277,6 +289,7 @@ async def umlforge_threat_model(
     trust_boundaries: list[str] | None = None,
     sensitive_data: list[str] | None = None,
     compliance_framework: str | None = None,
+    report_mode: bool = False,
 ) -> str:
     """
     Generate a security threat model with full STRIDE analysis.
@@ -288,11 +301,13 @@ async def umlforge_threat_model(
     - STRIDE threat table: all 6 categories with likelihood, mitigation, status
     - Critical flags (🚨) for unencrypted sensitive data flows and high-risk gaps
 
+    Pro/Team/Enterprise: set report_mode=True to also receive a Security Assessment
+    Report — an executive summary, threat landscape in plain English, critical
+    vulnerability deep-dives, compliance status, remediation roadmap, and risk score.
+
     Best for: pre-production security reviews, auth flow design,
     compliance documentation (GDPR, NDPA 2023, SOC2, PCI-DSS),
     penetration test preparation.
-
-    Pro users: set UMLFORGE_GUIDED_MODE=true in your .mcp.json env block.
 
     Args:
         system_description: What the system does, how users access it, main components.
@@ -302,6 +317,8 @@ async def umlforge_threat_model(
                           "API → database"]).
         sensitive_data: Sensitive data types (e.g. ["user emails", "payment tokens"]).
         compliance_framework: Compliance scope (e.g. "GDPR", "NDPA 2023", "PCI-DSS").
+        report_mode: When True, generate a Security Assessment Report alongside
+                     the diagrams. Pro/Team/Enterprise tier only.
     """
     config = load_config()
     return await api_client.generate(
@@ -312,6 +329,7 @@ async def umlforge_threat_model(
             "trust_boundaries": trust_boundaries or [],
             "sensitive_data": sensitive_data or [],
             "compliance_framework": compliance_framework,
+            "report_mode": report_mode,
         },
         guided_mode=config.guided_mode,
     )
