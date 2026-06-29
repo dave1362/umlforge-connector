@@ -127,6 +127,7 @@ async def umlforge_stakeholder_arch(
 async def umlforge_api_sequence(
     services: str,
     user_journey: str,
+    report_mode: bool = False,
 ) -> str:
     """
     Generate a detailed sequence diagram for an API or microservices interaction.
@@ -148,7 +149,7 @@ async def umlforge_api_sequence(
     config = load_config()
     return await api_client.generate(
         "umlforge_api_sequence",
-        {"services": services, "user_journey": user_journey},
+        {"services": services, "user_journey": user_journey, "report_mode": report_mode},
         guided_mode=config.guided_mode,
     )
 
@@ -242,6 +243,7 @@ async def umlforge_erd_schema(
     entities: str,
     access_patterns: str = "",
     db_technology: str = "PostgreSQL",
+    report_mode: bool = False,
 ) -> str:
     """
     Design a database ERD with schema narrative and integrity checklist.
@@ -275,6 +277,7 @@ async def umlforge_erd_schema(
             "entities": entities,
             "access_patterns": access_patterns,
             "db_technology": db_technology,
+            "report_mode": report_mode,
         },
         guided_mode=config.guided_mode,
     )
@@ -527,6 +530,7 @@ async def umlforge_deployment(
     environments: str,
     services: str,
     cicd_tool: str = "",
+    report_mode: bool = False,
 ) -> str:
     """
     Generate a deployment topology and CI/CD pipeline diagram.
@@ -562,6 +566,7 @@ async def umlforge_deployment(
             "environments": environments,
             "services": services,
             "cicd_tool": cicd_tool,
+            "report_mode": report_mode,
         },
         guided_mode=config.guided_mode,
     )
