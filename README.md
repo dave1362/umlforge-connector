@@ -17,7 +17,7 @@ descriptions.
   "mcpServers": {
     "umlforge": {
       "command": "uvx",
-      "args": ["umlforge==0.1.4"],
+      "args": ["umlforge"],
       "env": { "UMLFORGE_API_KEY": "your-api-key" }
     }
   }
