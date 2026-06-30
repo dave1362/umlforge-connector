@@ -96,12 +96,15 @@ async def suggest(task_description: str) -> str:
     response.raise_for_status()
     body = response.json()
 
+    ready = body.get("ready_to_run", "")
+    ready_block = f"\n\n**Ready to run:**\n```\n{ready}\n```" if ready else ""
+
     return (
-        f"**Recommended tool:** `{body['recommended_tool']}`\n\n"
-        f"{body['reasoning']}\n\n"
+        f"**Recommended:** `{body['recommended_tool']}`  \n"
+        f"{body['reasoning']}"
+        f"{ready_block}\n\n"
         f"**Alternative:** `{body['alternative_tool']}`  \n"
-        f"{body['alternative_reasoning']}\n\n"
-        f"*Call the recommended tool with your task details to generate the diagram.*"
+        f"{body['alternative_reasoning']}"
     )
 
 
