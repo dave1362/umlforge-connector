@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "umlforge"
 version = "0.1.4"
-description = "UML Forge MCP connector — AI-powered UML diagram generation for coding agents"
+description = "UML Forge MCP connector — architecture intelligence, security analysis, and living documentation for engineering teams"
 readme = "connector/README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }

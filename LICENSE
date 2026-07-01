@@ -1,22 +1,37 @@
-Copyright (c) 2026 UML Forge (umlforge.dev)
+Copyright (c) 2026 UML Forge (umlforge.dev). All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software (the "UML Forge MCP Connector") to install and use it solely
-for the purpose of accessing the UML Forge API service at umlforge.dev.
+PROPRIETARY SOFTWARE LICENSE
 
-The following restrictions apply:
+This software and all associated files are the proprietary property of UML Forge.
+Unauthorised copying, modification, distribution, or use of this software, in whole
+or in part, is strictly prohibited without the express written permission of UML Forge.
 
-1. You may not copy, modify, merge, publish, distribute, sublicense, or sell
-   the source code of this connector.
-2. You may not use this connector to access any API other than the official
-   UML Forge API at umlforge.dev.
-3. Commercial use of the connector source code itself (as distinct from the
-   UML Forge service) is not permitted without written consent from the author.
+CONNECTOR EXCEPTION
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+The MCP connector package (the "connector/" directory and its published PyPI
+distribution "umlforge") is licensed for installation and use subject to the
+following conditions:
+
+  1. You must hold a valid UML Forge account with an active API key obtained
+     from umlforge.dev.
+
+  2. You may install and run the connector solely to access the UML Forge API
+     on your own behalf.
+
+  3. You may not copy, modify, redistribute, sublicense, or incorporate the
+     connector or any portion of it into another product or service.
+
+  4. Your use of the connector is governed by the UML Forge Terms of Service
+     available at umlforge.dev/terms.
+
+ALL OTHER RIGHTS RESERVED
+
+The server-side API, prompt engineering, business logic, and all other components
+of UML Forge not covered by the Connector Exception above are strictly proprietary
+and are not licensed for any use, reproduction, or distribution.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. IN NO EVENT SHALL UML FORGE BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE USE OF THIS SOFTWARE.
+
+Contact: support@umlforge.dev

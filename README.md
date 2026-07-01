@@ -2,7 +2,7 @@
 
 <!-- mcp-name: io.github.dave1362/umlforge -->
 
-**AI-powered UML diagram generation for coding agents.**
+**Architecture intelligence, security analysis, and living documentation — inside your coding agent.**
 
 [UML Forge](https://umlforge.dev) gives Claude Code, Cursor, Windsurf, and any
 MCP-compatible coding agent a suite of 13 specialised tools for producing
