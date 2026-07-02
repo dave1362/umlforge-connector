@@ -15,7 +15,7 @@ to decide which tool to call — write them clearly and specifically.
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 from connector import api_client
@@ -30,6 +30,146 @@ _READ_ONLY = ToolAnnotations(
     openWorldHint=True,
 )
 
+# Clarifying questions per tool — mirrors api/prompts/p*.py clarifying_questions.
+# Elicitation happens here (connector layer) before the API call, so answers
+# arrive in params.clarifications and are injected into the prompt server-side.
+_GUIDED_QUESTIONS: dict[str, list[str]] = {
+    "umlforge_reverse_engineer": [
+        "Is there a dominant design pattern in this codebase "
+        "(e.g. MVC, hexagonal, event-driven, layered)?",
+        "Which subsystem or module is most business-critical "
+        "and should be the focus if the diagram scope must be reduced?",
+        "Are there any known architectural debts or workarounds "
+        "in this code I should flag when I find them?",
+    ],
+    "umlforge_stakeholder_arch": [
+        "Who is the most technically sceptical person in your audience, "
+        "and what is their primary concern about this system?",
+        "Are there any integrations or dependencies you want to "
+        "deliberately omit from the stakeholder view?",
+        "What is the single most important architectural decision "
+        "this diagram should make visible?",
+    ],
+    "umlforge_api_sequence": [
+        "Are any of the service calls asynchronous or event-driven "
+        "rather than synchronous request/response?",
+        "What is the most likely failure mode in this flow, "
+        "and does it currently have a fallback?",
+        "Is there a latency SLA on any part of this flow I should "
+        "mark as a performance boundary?",
+    ],
+    "umlforge_state_machine": [
+        "Can this entity exist in multiple states simultaneously, "
+        "or is it always in exactly one state?",
+        "Are there any states that can only be entered by an admin "
+        "or privileged actor, not by the entity itself?",
+        "What happens if two events arrive simultaneously — "
+        "is there a defined conflict resolution rule?",
+    ],
+    "umlforge_living_docs": [
+        "Were any existing patterns or relationships intentionally "
+        "removed in this sprint, or only added/modified?",
+        "Is there any part of the architecture that changed "
+        "conceptually but not in code yet (i.e. planned but not built)?",
+        "Who is the primary reader of this updated documentation — "
+        "the current team, a new joiner, or an external reviewer?",
+    ],
+    "umlforge_erd_schema": [
+        "What is the read-to-write ratio for the most frequently "
+        "accessed table — is this primarily a read-heavy or write-heavy workload?",
+        "Are there any multi-tenancy requirements — do different "
+        "organisations share the same tables, or are they isolated?",
+        "Which entities have the highest rate of change over time "
+        "and may need audit trails or soft deletes?",
+    ],
+    "umlforge_threat_model": [
+        "Is this system subject to any formal compliance framework "
+        "(GDPR, NDPA, PCI-DSS, HIPAA, SOC2)?",
+        "Are there any elevated-privilege operations in this system "
+        "that bypass normal authorisation checks?",
+        "Has this system or a similar one been the target of a "
+        "security incident before — if so, what category of attack?",
+    ],
+    "umlforge_frontend_components": [
+        "Are there any components that will be shared across "
+        "multiple pages or features, or is this feature self-contained?",
+        "What is the most complex user interaction in this feature — "
+        "the one with the most conditional behaviour?",
+        "Are there accessibility requirements (WCAG level) "
+        "I should factor into the component design?",
+    ],
+    "umlforge_event_driven": [
+        "Is message ordering guaranteed by the broker, "
+        "or must consumers handle out-of-order delivery?",
+        "Are any of these events sourced externally "
+        "(from a third party or external system)?",
+        "What is the acceptable lag between event publication "
+        "and consumer processing — is this near-real-time or batch?",
+    ],
+    "umlforge_onboarding": [
+        "Is the person being onboarded a complete newcomer to this "
+        "codebase, or do they have some existing familiarity?",
+        "What is the single biggest gotcha in this codebase — "
+        "the thing that trips up every new developer without exception?",
+        "Are there any parts of the system that are scheduled "
+        "for replacement or significant refactoring soon, which the "
+        "new developer should know not to invest too much time learning?",
+    ],
+    "umlforge_ai_agent": [
+        "Are any agents in this pipeline allowed to call other "
+        "agents recursively, or is the flow strictly linear/hierarchical?",
+        "What is the acceptable failure behaviour if a tool call "
+        "returns an error — retry, skip, or abort the pipeline?",
+        "Is there a human-in-the-loop requirement at any point, "
+        "and if so, what triggers the human review gate?",
+    ],
+    "umlforge_deployment": [
+        "Are there any regulatory or data residency requirements "
+        "that restrict which regions or cloud providers can be used?",
+        "What is the current disaster recovery objective — "
+        "what is the acceptable RTO and RPO for this system?",
+        "Are there any manual steps in the current deployment "
+        "process that are not yet automated and should be flagged?",
+    ],
+}
+
+
+async def _elicit_clarifications(ctx: Context, questions: list[str]) -> dict[str, str]:
+    """
+    Ask clarifying questions via MCP elicitation before an API call.
+    Returns collected answers keyed by first 40 chars of the question.
+    Returns empty dict if the client doesn't support elicitation.
+    """
+    clarifications: dict[str, str] = {}
+    for question in questions:
+        try:
+            result = await ctx.elicit(
+                message=question,
+                requestedSchema={
+                    "type": "object",
+                    "properties": {
+                        "response": {
+                            "type": "string",
+                            "title": "Your response (leave blank to skip)",
+                        },
+                    },
+                },
+            )
+            # FastMCP returns ElicitResult with .action and .content/.data
+            if hasattr(result, "action"):
+                if result.action != "accept":
+                    break  # user declined or cancelled — stop asking
+                data = getattr(result, "content", None) or getattr(result, "data", None) or {}
+                answer = data.get("response", "")
+            else:
+                # Older SDK variants may return the string directly
+                answer = str(result) if result else ""
+            if answer and answer.strip():
+                clarifications[question[:40]] = answer.strip()
+        except Exception:
+            break  # client doesn't support elicit — degrade to standard generation
+    return clarifications
+
 
 # ── 1. Reverse Engineer ────────────────────────────────────────────────────────
 
@@ -39,6 +179,7 @@ async def umlforge_reverse_engineer(
     github_url: str | None = None,
     max_nodes: int = 20,
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Analyse an existing codebase and produce UML class, sequence, and state diagrams.
@@ -77,15 +218,20 @@ async def umlforge_reverse_engineer(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "codebase": codebase,
+        "github_url": github_url,
+        "max_nodes": max_nodes,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_reverse_engineer"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_reverse_engineer",
-        {
-            "codebase": codebase,
-            "github_url": github_url,
-            "max_nodes": max_nodes,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_reverse_engineer", params, guided_mode=config.guided_mode
     )
 
 
@@ -96,6 +242,7 @@ async def umlforge_stakeholder_arch(
     system_description: str,
     audience_description: str,
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Generate a C4 architecture diagram for a mixed technical/non-technical audience.
@@ -126,14 +273,19 @@ async def umlforge_stakeholder_arch(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "system_description": system_description,
+        "audience_description": audience_description,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_stakeholder_arch"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_stakeholder_arch",
-        {
-            "system_description": system_description,
-            "audience_description": audience_description,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_stakeholder_arch", params, guided_mode=config.guided_mode
     )
 
 
@@ -144,6 +296,7 @@ async def umlforge_api_sequence(
     services: str,
     user_journey: str,
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Diagram how services call each other for a specific user action or API flow.
@@ -175,10 +328,19 @@ async def umlforge_api_sequence(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "services": services,
+        "user_journey": user_journey,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_api_sequence"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_api_sequence",
-        {"services": services, "user_journey": user_journey, "report_mode": report_mode},
-        guided_mode=config.guided_mode,
+        "umlforge_api_sequence", params, guided_mode=config.guided_mode
     )
 
 
@@ -191,6 +353,7 @@ async def umlforge_state_machine(
     events: str,
     business_rules: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Design a state machine for a domain entity that has a lifecycle.
@@ -221,16 +384,21 @@ async def umlforge_state_machine(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "entity": entity,
+        "states": states,
+        "events": events,
+        "business_rules": business_rules,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_state_machine"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_state_machine",
-        {
-            "entity": entity,
-            "states": states,
-            "events": events,
-            "business_rules": business_rules,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_state_machine", params, guided_mode=config.guided_mode
     )
 
 
@@ -242,6 +410,7 @@ async def umlforge_living_docs(
     sprint_changes: str,
     affected_files: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Update diagrams you already have to reflect what changed in a sprint or PR.
@@ -278,15 +447,20 @@ async def umlforge_living_docs(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "current_diagrams": current_diagrams,
+        "sprint_changes": sprint_changes,
+        "affected_files": affected_files,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_living_docs"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_living_docs",
-        {
-            "current_diagrams": current_diagrams,
-            "sprint_changes": sprint_changes,
-            "affected_files": affected_files,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_living_docs", params, guided_mode=config.guided_mode
     )
 
 
@@ -299,6 +473,7 @@ async def umlforge_erd_schema(
     access_patterns: str = "",
     db_technology: str = "PostgreSQL",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Design a database schema with ERD, integrity rules, and index recommendations.
@@ -334,16 +509,21 @@ async def umlforge_erd_schema(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "domain_description": domain_description,
+        "entities": entities,
+        "access_patterns": access_patterns,
+        "db_technology": db_technology,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_erd_schema"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_erd_schema",
-        {
-            "domain_description": domain_description,
-            "entities": entities,
-            "access_patterns": access_patterns,
-            "db_technology": db_technology,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_erd_schema", params, guided_mode=config.guided_mode
     )
 
 
@@ -357,6 +537,7 @@ async def umlforge_threat_model(
     sensitive_data: list[str] | None = None,
     compliance_framework: str | None = None,
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Generate a full STRIDE security threat model for a system.
@@ -392,17 +573,22 @@ async def umlforge_threat_model(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "system_description": system_description,
+        "auth_mechanism": auth_mechanism,
+        "trust_boundaries": trust_boundaries or [],
+        "sensitive_data": sensitive_data or [],
+        "compliance_framework": compliance_framework,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_threat_model"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_threat_model",
-        {
-            "system_description": system_description,
-            "auth_mechanism": auth_mechanism,
-            "trust_boundaries": trust_boundaries or [],
-            "sensitive_data": sensitive_data or [],
-            "compliance_framework": compliance_framework,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_threat_model", params, guided_mode=config.guided_mode
     )
 
 
@@ -415,6 +601,7 @@ async def umlforge_frontend_components(
     state_management: str = "",
     interactions: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Design a frontend component tree and interaction flow for a UI feature.
@@ -447,16 +634,21 @@ async def umlforge_frontend_components(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "feature_description": feature_description,
+        "framework": framework,
+        "state_management": state_management,
+        "interactions": interactions,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_frontend_components"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_frontend_components",
-        {
-            "feature_description": feature_description,
-            "framework": framework,
-            "state_management": state_management,
-            "interactions": interactions,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_frontend_components", params, guided_mode=config.guided_mode
     )
 
 
@@ -470,6 +662,7 @@ async def umlforge_event_driven(
     broker: str = "",
     events: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Design an event-driven or async messaging architecture (Kafka, SQS, RabbitMQ, etc.).
@@ -503,17 +696,22 @@ async def umlforge_event_driven(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "system_context": system_context,
+        "producers": producers,
+        "consumers": consumers,
+        "broker": broker,
+        "events": events,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_event_driven"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_event_driven",
-        {
-            "system_context": system_context,
-            "producers": producers,
-            "consumers": consumers,
-            "broker": broker,
-            "events": events,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_event_driven", params, guided_mode=config.guided_mode
     )
 
 
@@ -526,6 +724,7 @@ async def umlforge_onboarding(
     key_workflows: str,
     pain_points: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Create a day-one knowledge-transfer package for a developer joining a team.
@@ -557,16 +756,21 @@ async def umlforge_onboarding(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "system_description": system_description,
+        "tech_stack": tech_stack,
+        "key_workflows": key_workflows,
+        "pain_points": pain_points,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_onboarding"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_onboarding",
-        {
-            "system_description": system_description,
-            "tech_stack": tech_stack,
-            "key_workflows": key_workflows,
-            "pain_points": pain_points,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_onboarding", params, guided_mode=config.guided_mode
     )
 
 
@@ -580,6 +784,7 @@ async def umlforge_ai_agent(
     orchestration_approach: str = "",
     memory_strategy: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Design an AI agent pipeline or multi-agent orchestration system.
@@ -618,17 +823,22 @@ async def umlforge_ai_agent(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "pipeline_purpose": pipeline_purpose,
+        "agents": agents,
+        "tools_available": tools_available,
+        "orchestration_approach": orchestration_approach,
+        "memory_strategy": memory_strategy,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_ai_agent"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_ai_agent",
-        {
-            "pipeline_purpose": pipeline_purpose,
-            "agents": agents,
-            "tools_available": tools_available,
-            "orchestration_approach": orchestration_approach,
-            "memory_strategy": memory_strategy,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_ai_agent", params, guided_mode=config.guided_mode
     )
 
 
@@ -642,6 +852,7 @@ async def umlforge_deployment(
     services: str,
     cicd_tool: str = "",
     report_mode: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """
     Generate a deployment topology and CI/CD pipeline diagram.
@@ -678,17 +889,22 @@ async def umlforge_deployment(
                      Pro/Team/Enterprise only.
     """
     config = load_config()
+    params: dict = {
+        "system_name": system_name,
+        "cloud_provider": cloud_provider,
+        "environments": environments,
+        "services": services,
+        "cicd_tool": cicd_tool,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_deployment"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_deployment",
-        {
-            "system_name": system_name,
-            "cloud_provider": cloud_provider,
-            "environments": environments,
-            "services": services,
-            "cicd_tool": cicd_tool,
-            "report_mode": report_mode,
-        },
-        guided_mode=config.guided_mode,
+        "umlforge_deployment", params, guided_mode=config.guided_mode
     )
 
 
