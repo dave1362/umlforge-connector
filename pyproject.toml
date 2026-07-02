@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "umlforge"
-version = "0.1.5"
+version = "0.1.6"
 description = "UML Forge MCP connector — architecture intelligence, security analysis, and living documentation for engineering teams"
 readme = "connector/README.md"
 requires-python = ">=3.11"
