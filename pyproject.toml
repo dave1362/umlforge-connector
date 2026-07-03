@@ -8,7 +8,7 @@ version = "0.1.6"
 description = "UML Forge MCP connector — architecture intelligence, security analysis, and living documentation for engineering teams"
 readme = "connector/README.md"
 requires-python = ">=3.11"
-license = { text = "Proprietary" }
+license = { text = "MIT" }
 keywords = [
     "uml", "mcp", "diagram", "architecture", "ai",
     "claude", "cursor", "sequence-diagram", "class-diagram",
@@ -16,7 +16,7 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Documentation",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
