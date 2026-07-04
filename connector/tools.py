@@ -15,22 +15,13 @@ to decide which tool to call — write them clearly and specifically.
 
 from __future__ import annotations
 
-from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 from connector import api_client
 from connector.config import load_config
 
-
-def _connector_version() -> str:
-    try:
-        return _pkg_version("umlforge")
-    except PackageNotFoundError:
-        return "0.0.0+dev"
-
-
-mcp = FastMCP("umlforge_mcp", version=_connector_version())
+mcp = FastMCP("umlforge_mcp")
 
 _READ_ONLY = ToolAnnotations(
     readOnlyHint=True,
