@@ -4,7 +4,7 @@
   "title": "UML Forge",
   "description": "Architecture intelligence, security analysis, and living docs. 13 Mermaid tools.",
   "repository": {
-    "url": "https://github.com/dave1362/uml-forge",
+    "url": "https://github.com/dave1362/umlforge-connector",
     "source": "github"
   },
   "version": "0.1.6",
