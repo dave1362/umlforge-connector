@@ -56,4 +56,4 @@ alongside the diagram.
 
 ## License
 
-Proprietary. The connector is open to install and use with a UML Forge account.
+MIT — see [LICENSE](LICENSE).

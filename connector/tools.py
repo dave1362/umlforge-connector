@@ -15,13 +15,14 @@ to decide which tool to call — write them clearly and specifically.
 
 from __future__ import annotations
 
+from importlib.metadata import version as _pkg_version
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.types import ToolAnnotations
 
 from connector import api_client
 from connector.config import load_config
 
-mcp = FastMCP("umlforge_mcp")
+mcp = FastMCP("umlforge_mcp", version=_pkg_version("umlforge"))
 
 _READ_ONLY = ToolAnnotations(
     readOnlyHint=True,
