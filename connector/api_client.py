@@ -27,6 +27,23 @@ async def generate(
     Returns a formatted Markdown string ready for display in a coding agent.
     """
     config = load_config()
+    if not config.api_key:
+        return (
+            "**UML Forge: API key not configured.**\n\n"
+            "Add your key to your MCP configuration:\n\n"
+            "```json\n"
+            "{\n"
+            '  "mcpServers": {\n'
+            '    "umlforge": {\n'
+            '      "command": "uvx",\n'
+            '      "args": ["umlforge"],\n'
+            '      "env": { "UMLFORGE_API_KEY": "uf_live_your_key_here" }\n'
+            "    }\n"
+            "  }\n"
+            "}\n"
+            "```\n\n"
+            "Get your free API key at https://umlforge.dev"
+        )
 
     async with httpx.AsyncClient(timeout=_GENERATE_TIMEOUT) as client:
         response = await client.post(
@@ -67,6 +84,23 @@ async def suggest(task_description: str) -> str:
     Returns a formatted recommendation string.
     """
     config = load_config()
+    if not config.api_key:
+        return (
+            "**UML Forge: API key not configured.**\n\n"
+            "Add your key to your MCP configuration:\n\n"
+            "```json\n"
+            "{\n"
+            '  "mcpServers": {\n'
+            '    "umlforge": {\n'
+            '      "command": "uvx",\n'
+            '      "args": ["umlforge"],\n'
+            '      "env": { "UMLFORGE_API_KEY": "uf_live_your_key_here" }\n'
+            "    }\n"
+            "  }\n"
+            "}\n"
+            "```\n\n"
+            "Get your free API key at https://umlforge.dev"
+        )
 
     async with httpx.AsyncClient(timeout=_SUGGEST_TIMEOUT) as client:
         response = await client.post(
