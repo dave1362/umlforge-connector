@@ -81,7 +81,7 @@ def load_config() -> ConnectorConfig:
                 "Add: api_key = \"uf_live_your_key_here\"",
                 file=sys.stderr,
             )
-            sys.exit(1)
+            return ConnectorConfig(api_key="")
 
         return ConnectorConfig(
             api_key=data["api_key"],
@@ -89,6 +89,7 @@ def load_config() -> ConnectorConfig:
             guided_mode=bool(data.get("guided_mode", False)),
         )
 
-    # ── 3. Nothing found ───────────────────────────────────────────────────────
+    # ── 3. Nothing found — return empty key so the server stays up ───────────
+    # Tool calls will return a setup message rather than crashing the process.
     print(_SETUP_INSTRUCTIONS, file=sys.stderr)
-    sys.exit(1)
+    return ConnectorConfig(api_key="")
