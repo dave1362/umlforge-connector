@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.dave1362/umlforge",
   "title": "UML Forge",
-  "description": "Architecture intelligence, security analysis, and living docs. 13 Mermaid tools.",
+  "description": "Architecture intelligence, security analysis, and living docs. 14 Mermaid tools.",
   "repository": {
     "url": "https://github.com/dave1362/umlforge-connector",
     "source": "github"
   },
-  "version": "0.1.9",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "umlforge",
-      "version": "0.1.9",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       },

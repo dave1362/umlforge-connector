@@ -131,6 +131,15 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "Are there any manual steps in the current deployment "
         "process that are not yet automated and should be flagged?",
     ],
+    "umlforge_legacy_migrate": [
+        "What does this program currently do in production — is it a batch job, "
+        "an online transaction processor, or a reporting/extract system?",
+        "Are there hard interface contracts that must be preserved exactly — "
+        "file formats, DB schemas, calling conventions, or regulatory outputs "
+        "that downstream systems depend on?",
+        "What is the preferred migration strategy — big-bang rewrite, incremental "
+        "strangler-fig (run old and new in parallel), or data-layer-first?",
+    ],
 }
 
 
@@ -908,7 +917,86 @@ async def umlforge_deployment(
     )
 
 
-# ── 13. Suggest ───────────────────────────────────────────────────────────────
+# ── 13. Legacy Migrate ───────────────────────────────────────────────────────
+
+@mcp.tool(annotations=_READ_ONLY)
+async def umlforge_legacy_migrate(
+    legacy_code: str = "",
+    github_url: str | None = None,
+    source_language: str = "COBOL",
+    target_language: str = "Python",
+    system_purpose: str = "",
+    report_mode: bool = False,
+    ctx: Context | None = None,
+) -> str:
+    """
+    Visualise a legacy codebase and produce a migration roadmap to a modern language.
+
+    USE THIS WHEN:
+    - You have COBOL, Fortran, ABAP, RPG, PL/I, Pascal, BASIC, Assembly, Ada, or ALGOL code
+    - You want to understand the structure of a legacy program before migrating it
+    - You need diagrams showing what the system does NOW and what it would look like
+      rebuilt in Python, Go, Rust, Java, TypeScript, C#, or Kotlin
+    - You are planning or pitching a modernisation project and need a migration roadmap
+
+    NOT FOR:
+    - Analysing modern codebases → use umlforge_reverse_engineer
+    - Generating translated source code (Option B — future feature)
+    - Database schema design → use umlforge_erd_schema
+
+    Produces:
+    - Legacy structure diagram: program divisions, sections, modules, data stores,
+      file I/O, external interfaces (as the system exists today)
+    - Modern equivalent diagram: proposed clean-architecture rebuild in the target
+      language with idiomatic layer names and structure
+    - Migration roadmap: 6-phase plan (Understand → Extract → Data → Logic →
+      Test Parity → Cutover) with duration estimates and exit criteria
+    - Complexity & risk flags: global state, file I/O coupling, implicit typing,
+      unstructured control flow, vendor extensions, interface contracts
+    - (report_mode=True) Legacy Migration Assessment: complexity scores, recommended
+      strategy, tooling recommendations, risk assessment (A–F per dimension)
+
+    Provide EITHER github_url OR legacy_code — not both.
+
+    Args:
+        legacy_code: Paste the legacy source code directly.
+        github_url: Public GitHub URL containing legacy source files.
+                    Accepted formats: github.com/owner/repo,
+                    github.com/owner/repo/tree/branch/path,
+                    github.com/owner/repo/blob/branch/file.cbl
+        source_language: Language of the legacy code (default: COBOL).
+                         Supported: COBOL, Fortran, ABAP, RPG, PL/I, Pascal,
+                         BASIC, Assembly, Ada, ALGOL.
+        target_language: Modern language to migrate toward (default: Python).
+                         Supported: Python, Go, Rust, Java, TypeScript, C#, Kotlin.
+        system_purpose: Brief description of what the program does in production
+                        (e.g. "monthly payroll batch", "order entry OLTP"). Optional
+                        but improves diagram labels and migration advice.
+        report_mode: True → also produce a Legacy Migration Assessment with
+                     complexity scores and tooling recommendations.
+                     Pro/Team/Enterprise only.
+    """
+    config = load_config()
+    params: dict = {
+        "legacy_code": legacy_code,
+        "github_url": github_url,
+        "source_language": source_language,
+        "target_language": target_language,
+        "system_purpose": system_purpose,
+        "report_mode": report_mode,
+    }
+    if config.guided_mode and ctx is not None:
+        clarifications = await _elicit_clarifications(
+            ctx, _GUIDED_QUESTIONS["umlforge_legacy_migrate"]
+        )
+        if clarifications:
+            params["clarifications"] = clarifications
+    return await api_client.generate(
+        "umlforge_legacy_migrate", params, guided_mode=config.guided_mode
+    )
+
+
+# ── 14. Suggest ───────────────────────────────────────────────────────────────
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_suggest(task_description: str) -> str:
@@ -921,7 +1009,7 @@ async def umlforge_suggest(task_description: str) -> str:
     3. Explain why this tool fits and suggest an alternative
 
     USE THIS WHEN:
-    - You are not sure which of the 12 tools to use
+    - You are not sure which of the 13 tools to use
     - You want to describe a goal ("analyse this repo", "model our order lifecycle")
       and get a ready-to-run recommendation
     - You want to avoid trial and error with the wrong tool
