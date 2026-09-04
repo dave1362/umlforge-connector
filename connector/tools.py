@@ -131,7 +131,7 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "Are there any manual steps in the current deployment "
         "process that are not yet automated and should be flagged?",
     ],
-    "umlforge_legacy_migrate": [
+    "umlforge_legacy_migration": [
         "What does this program currently do in production — is it a batch job, "
         "an online transaction processor, or a reporting/extract system?",
         "Are there hard interface contracts that must be preserved exactly — "
@@ -920,7 +920,7 @@ async def umlforge_deployment(
 # ── 13. Legacy Migrate ───────────────────────────────────────────────────────
 
 @mcp.tool(annotations=_READ_ONLY)
-async def umlforge_legacy_migrate(
+async def umlforge_legacy_migration(
     legacy_code: str = "",
     github_url: str | None = None,
     source_language: str = "COBOL",
@@ -987,12 +987,12 @@ async def umlforge_legacy_migrate(
     }
     if config.guided_mode and ctx is not None:
         clarifications = await _elicit_clarifications(
-            ctx, _GUIDED_QUESTIONS["umlforge_legacy_migrate"]
+            ctx, _GUIDED_QUESTIONS["umlforge_legacy_migration"]
         )
         if clarifications:
             params["clarifications"] = clarifications
     return await api_client.generate(
-        "umlforge_legacy_migrate", params, guided_mode=config.guided_mode
+        "umlforge_legacy_migration", params, guided_mode=config.guided_mode
     )
 
 

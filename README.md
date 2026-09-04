@@ -45,7 +45,7 @@ Get your API key at [umlforge.dev](https://umlforge.dev).
 | `umlforge_stakeholder_arch` | C4 context diagrams for investors, CTOs, and non-technical stakeholders |
 | `umlforge_living_docs` | Update existing diagrams to reflect sprint or PR changes |
 | `umlforge_onboarding` | Day-one knowledge-transfer package for new team members |
-| `umlforge_legacy_migrate` | Legacy structure + modern architecture diagrams and 6-phase migration roadmap from COBOL, Fortran, ABAP, RPG, and other legacy languages |
+| `umlforge_legacy_migration` | Legacy structure + modern architecture diagrams and 6-phase migration roadmap from COBOL, Fortran, ABAP, RPG, and other legacy languages |
 
 All tools accept `report_mode=True` to generate a written analysis report
 alongside the diagram.
