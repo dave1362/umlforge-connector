@@ -2,7 +2,7 @@
 
 <!-- mcp-name: io.github.dave1362/umlforge -->
 
-**Architecture intelligence, security analysis, and living documentation — inside your coding agent.**
+**Architecture intelligence, security analysis, and living documentation ? inside your coding agent.**
 
 [UML Forge](https://umlforge.dev) gives Claude Code, Cursor, Windsurf, and any
 MCP-compatible coding agent a suite of 14 specialised tools for producing
@@ -24,7 +24,7 @@ descriptions.
 }
 ```
 
-**Cursor / Windsurf** — add the same block to your MCP settings.
+**Cursor / Windsurf** ? add the same block to your MCP settings.
 
 Get your API key at [umlforge.dev](https://umlforge.dev).
 
@@ -32,7 +32,7 @@ Get your API key at [umlforge.dev](https://umlforge.dev).
 
 | Tool | Description |
 |------|-------------|
-| `umlforge_suggest` | **Start here.** Describe your goal in plain English — returns the right tool and a ready-to-run call |
+| `umlforge_suggest` | **Start here.** Describe your goal in plain English ? returns the right tool and a ready-to-run call |
 | `umlforge_reverse_engineer` | Class, sequence, and state diagrams from a codebase or GitHub URL |
 | `umlforge_api_sequence` | Sequence diagrams for request flows across services |
 | `umlforge_erd_schema` | Entity-relationship diagrams from domain descriptions or SQL schemas |
@@ -57,4 +57,5 @@ alongside the diagram.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT ? see [LICENSE](LICENSE).
+

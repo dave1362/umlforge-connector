@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "umlforge"
 version = "0.2.1"
-description = "UML Forge MCP connector — architecture intelligence, security analysis, and living documentation for engineering teams"
+description = "UML Forge MCP connector ? architecture intelligence, security analysis, and living documentation for engineering teams"
 readme = "connector/README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -38,5 +38,6 @@ Homepage = "https://umlforge.dev"
 Documentation = "https://umlforge.dev/docs"
 
 [tool.hatch.build.targets.wheel]
-# Only ship the connector — api/ and dashboard/ stay server-side
+# Only ship the connector ? api/ and dashboard/ stay server-side
 packages = ["connector"]
+

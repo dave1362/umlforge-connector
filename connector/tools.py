@@ -1,7 +1,7 @@
 """
-UML Forge Connector — MCP Tool Definitions
+UML Forge Connector ? MCP Tool Definitions
 
-Registers all 13 UML Forge tools with the FastMCP server.
+Registers all 14 UML Forge tools with the FastMCP server.
 
 CRITICAL CONSTRAINTS (enforced by architecture):
   - ZERO business logic in this file
@@ -10,7 +10,7 @@ CRITICAL CONSTRAINTS (enforced by architecture):
   - Every tool body is a single call to api_client.generate() or api_client.suggest()
 
 The tool docstrings are what coding agents (Claude Code, Cursor, etc.) read
-to decide which tool to call — write them clearly and specifically.
+to decide which tool to call ? write them clearly and specifically.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _READ_ONLY = ToolAnnotations(
     openWorldHint=True,
 )
 
-# Clarifying questions per tool — mirrors api/prompts/p*.py clarifying_questions.
+# Clarifying questions per tool ? mirrors api/prompts/p*.py clarifying_questions.
 # Elicitation happens here (connector layer) before the API call, so answers
 # arrive in params.clarifications and are injected into the prompt server-side.
 _GUIDED_QUESTIONS: dict[str, list[str]] = {
@@ -63,7 +63,7 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "or is it always in exactly one state?",
         "Are there any states that can only be entered by an admin "
         "or privileged actor, not by the entity itself?",
-        "What happens if two events arrive simultaneously — "
+        "What happens if two events arrive simultaneously ? "
         "is there a defined conflict resolution rule?",
     ],
     "umlforge_living_docs": [
@@ -71,13 +71,13 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "removed in this sprint, or only added/modified?",
         "Is there any part of the architecture that changed "
         "conceptually but not in code yet (i.e. planned but not built)?",
-        "Who is the primary reader of this updated documentation — "
+        "Who is the primary reader of this updated documentation ? "
         "the current team, a new joiner, or an external reviewer?",
     ],
     "umlforge_erd_schema": [
         "What is the read-to-write ratio for the most frequently "
-        "accessed table — is this primarily a read-heavy or write-heavy workload?",
-        "Are there any multi-tenancy requirements — do different "
+        "accessed table ? is this primarily a read-heavy or write-heavy workload?",
+        "Are there any multi-tenancy requirements ? do different "
         "organisations share the same tables, or are they isolated?",
         "Which entities have the highest rate of change over time "
         "and may need audit trails or soft deletes?",
@@ -88,12 +88,12 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "Are there any elevated-privilege operations in this system "
         "that bypass normal authorisation checks?",
         "Has this system or a similar one been the target of a "
-        "security incident before — if so, what category of attack?",
+        "security incident before ? if so, what category of attack?",
     ],
     "umlforge_frontend_components": [
         "Are there any components that will be shared across "
         "multiple pages or features, or is this feature self-contained?",
-        "What is the most complex user interaction in this feature — "
+        "What is the most complex user interaction in this feature ? "
         "the one with the most conditional behaviour?",
         "Are there accessibility requirements (WCAG level) "
         "I should factor into the component design?",
@@ -104,12 +104,12 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "Are any of these events sourced externally "
         "(from a third party or external system)?",
         "What is the acceptable lag between event publication "
-        "and consumer processing — is this near-real-time or batch?",
+        "and consumer processing ? is this near-real-time or batch?",
     ],
     "umlforge_onboarding": [
         "Is the person being onboarded a complete newcomer to this "
         "codebase, or do they have some existing familiarity?",
-        "What is the single biggest gotcha in this codebase — "
+        "What is the single biggest gotcha in this codebase ? "
         "the thing that trips up every new developer without exception?",
         "Are there any parts of the system that are scheduled "
         "for replacement or significant refactoring soon, which the "
@@ -119,25 +119,25 @@ _GUIDED_QUESTIONS: dict[str, list[str]] = {
         "Are any agents in this pipeline allowed to call other "
         "agents recursively, or is the flow strictly linear/hierarchical?",
         "What is the acceptable failure behaviour if a tool call "
-        "returns an error — retry, skip, or abort the pipeline?",
+        "returns an error ? retry, skip, or abort the pipeline?",
         "Is there a human-in-the-loop requirement at any point, "
         "and if so, what triggers the human review gate?",
     ],
     "umlforge_deployment": [
         "Are there any regulatory or data residency requirements "
         "that restrict which regions or cloud providers can be used?",
-        "What is the current disaster recovery objective — "
+        "What is the current disaster recovery objective ? "
         "what is the acceptable RTO and RPO for this system?",
         "Are there any manual steps in the current deployment "
         "process that are not yet automated and should be flagged?",
     ],
     "umlforge_legacy_migration": [
-        "What does this program currently do in production — is it a batch job, "
+        "What does this program currently do in production ? is it a batch job, "
         "an online transaction processor, or a reporting/extract system?",
-        "Are there hard interface contracts that must be preserved exactly — "
+        "Are there hard interface contracts that must be preserved exactly ? "
         "file formats, DB schemas, calling conventions, or regulatory outputs "
         "that downstream systems depend on?",
-        "What is the preferred migration strategy — big-bang rewrite, incremental "
+        "What is the preferred migration strategy ? big-bang rewrite, incremental "
         "strangler-fig (run old and new in parallel), or data-layer-first?",
     ],
 }
@@ -167,7 +167,7 @@ async def _elicit_clarifications(ctx: Context, questions: list[str]) -> dict[str
             # FastMCP returns ElicitResult with .action and .content/.data
             if hasattr(result, "action"):
                 if result.action != "accept":
-                    break  # user declined or cancelled — stop asking
+                    break  # user declined or cancelled ? stop asking
                 data = getattr(result, "content", None) or getattr(result, "data", None) or {}
                 answer = data.get("response", "")
             else:
@@ -176,17 +176,18 @@ async def _elicit_clarifications(ctx: Context, questions: list[str]) -> dict[str
             if answer and answer.strip():
                 clarifications[question[:40]] = answer.strip()
         except Exception:
-            break  # client doesn't support elicit — degrade to standard generation
+            break  # client doesn't support elicit ? degrade to standard generation
     return clarifications
 
 
-# ── 1. Reverse Engineer ────────────────────────────────────────────────────────
+# ?? 1. Reverse Engineer ????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_reverse_engineer(
     codebase: str = "",
     github_url: str | None = None,
     max_nodes: int = 20,
+    github_token: str | None = None,
     report_mode: bool = False,
     ctx: Context | None = None,
 ) -> str:
@@ -200,10 +201,10 @@ async def umlforge_reverse_engineer(
     - You want an Architectural Intelligence Report on any codebase
 
     NOT FOR:
-    - Designing a new system from scratch → use umlforge_stakeholder_arch
-    - Updating diagrams after a sprint → use umlforge_living_docs
-    - Documenting database schema → use umlforge_erd_schema
-    - Mapping how services call each other → use umlforge_api_sequence
+    - Designing a new system from scratch ? use umlforge_stakeholder_arch
+    - Updating diagrams after a sprint ? use umlforge_living_docs
+    - Documenting database schema ? use umlforge_erd_schema
+    - Mapping how services call each other ? use umlforge_api_sequence
 
     Produces:
     - Class diagram: entities, attributes, relationships, multiplicities
@@ -211,9 +212,9 @@ async def umlforge_reverse_engineer(
     - State diagram: entity lifecycle (if stateful entities are detected)
     - Architectural smell flags: god classes, circular deps, anemic models
     - (report_mode=True) Architectural Intelligence Report: system overview,
-      key findings, modernisation roadmap, health scores (A–F)
+      key findings, modernisation roadmap, health scores (A?F)
 
-    Provide EITHER github_url OR codebase — not both.
+    Provide EITHER github_url OR codebase ? not both.
 
     Args:
         github_url: Public GitHub URL. Accepted formats:
@@ -222,8 +223,10 @@ async def umlforge_reverse_engineer(
                       github.com/owner/repo/blob/branch/path/to/file.py
         codebase: Paste code directly when you have files in context
                   or the repo is private.
-        max_nodes: Max classes/components per diagram (default 20).
-        report_mode: True → also produce an Architectural Intelligence Report.
+        max_nodes: Max classes/components per diagram (default 20, range 5?50).
+        github_token: GitHub personal access token (repo scope) ? only needed
+                      for private repositories. Never stored or logged.
+        report_mode: True ? also produce an Architectural Intelligence Report.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -231,6 +234,7 @@ async def umlforge_reverse_engineer(
         "codebase": codebase,
         "github_url": github_url,
         "max_nodes": max_nodes,
+        "github_token": github_token,
         "report_mode": report_mode,
     }
     if config.guided_mode and ctx is not None:
@@ -244,7 +248,7 @@ async def umlforge_reverse_engineer(
     )
 
 
-# ── 2. Stakeholder Architecture ───────────────────────────────────────────────
+# ?? 2. Stakeholder Architecture ???????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_stakeholder_arch(
@@ -262,10 +266,10 @@ async def umlforge_stakeholder_arch(
     - You want Context + Container + Component diagrams in one call
 
     NOT FOR:
-    - Analysing code that already exists → use umlforge_reverse_engineer
-    - Tracing a specific API request across services → use umlforge_api_sequence
-    - Infrastructure and deployment topology → use umlforge_deployment
-    - Security threat modelling → use umlforge_threat_model
+    - Analysing code that already exists ? use umlforge_reverse_engineer
+    - Tracing a specific API request across services ? use umlforge_api_sequence
+    - Infrastructure and deployment topology ? use umlforge_deployment
+    - Security threat modelling ? use umlforge_threat_model
 
     Produces:
     - C4 Context: system boundary, external actors, primary integrations
@@ -278,7 +282,7 @@ async def umlforge_stakeholder_arch(
         system_description: What the system does, who uses it, its major components.
         audience_description: Who will read this (e.g. "CTO and non-technical board",
                               "backend engineers new to the system").
-        report_mode: True → also produce Architecture Communication Notes.
+        report_mode: True ? also produce Architecture Communication Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -298,7 +302,7 @@ async def umlforge_stakeholder_arch(
     )
 
 
-# ── 3. API Sequence ───────────────────────────────────────────────────────────
+# ?? 3. API Sequence ???????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_api_sequence(
@@ -317,23 +321,23 @@ async def umlforge_api_sequence(
     - You are writing QA test cases or doing incident post-mortems
 
     NOT FOR:
-    - Full codebase analysis → use umlforge_reverse_engineer
-    - Async/event-driven messaging → use umlforge_event_driven
-    - Frontend component interactions → use umlforge_frontend_components
-    - Database schema design → use umlforge_erd_schema
+    - Full codebase analysis ? use umlforge_reverse_engineer
+    - Async/event-driven messaging ? use umlforge_event_driven
+    - Frontend component interactions ? use umlforge_frontend_components
+    - Database schema design ? use umlforge_erd_schema
 
     Produces:
     - Sequence diagram: happy path + at least 2 failure paths, activation boxes,
       sync vs async arrows, performance boundary annotations
     - Inter-service dependency table: caller, callee, protocol, failure mode, mitigation
-    - (report_mode=True) Design Score: Resilience, Performance, Contract Clarity (A–F)
+    - (report_mode=True) Design Score: Resilience, Performance, Contract Clarity (A?F)
 
     Args:
         services: All participants, e.g.
                   "API Gateway, Auth Service, Order Service, Payment Provider, User DB".
         user_journey: The action to diagram in plain English,
                       e.g. "User places an order through checkout".
-        report_mode: True → also produce a Design Score report.
+        report_mode: True ? also produce a Design Score report.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -353,7 +357,7 @@ async def umlforge_api_sequence(
     )
 
 
-# ── 4. State Machine ──────────────────────────────────────────────────────────
+# ?? 4. State Machine ??????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_state_machine(
@@ -368,19 +372,19 @@ async def umlforge_state_machine(
     Design a state machine for a domain entity that has a lifecycle.
 
     USE THIS WHEN:
-    - An entity moves through states (Order: pending → active → cancelled)
+    - An entity moves through states (Order: pending ? active ? cancelled)
     - You need to model a workflow, approval chain, or subscription lifecycle
     - You want to find missing states, invalid transitions, or race conditions
 
     NOT FOR:
-    - Flows between services (requests, responses) → use umlforge_api_sequence
-    - Async event messaging between services → use umlforge_event_driven
-    - Full codebase analysis → use umlforge_reverse_engineer
+    - Flows between services (requests, responses) ? use umlforge_api_sequence
+    - Async event messaging between services ? use umlforge_event_driven
+    - Full codebase analysis ? use umlforge_reverse_engineer
 
     Produces:
     - stateDiagram-v2: all states, entry/exit actions, guard conditions,
       composite states, explicit ERROR and TERMINAL states
-    - State transition table: current state → event → guard → next state → action
+    - State transition table: current state ? event ? guard ? next state ? action
     - Implementation notes: DB write requirements, domain events, race condition guards
     - (report_mode=True) Analysis Notes: transition risks, unreachable states, quick wins
 
@@ -389,7 +393,7 @@ async def umlforge_state_machine(
         states: Known lifecycle states (e.g. "pending, active, suspended, cancelled").
         events: Triggers that cause transitions (e.g. "payment_received, user_cancels").
         business_rules: Constraints on transitions (optional).
-        report_mode: True → also produce State Machine Analysis Notes.
+        report_mode: True ? also produce State Machine Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -411,7 +415,7 @@ async def umlforge_state_machine(
     )
 
 
-# ── 5. Living Docs ────────────────────────────────────────────────────────────
+# ?? 5. Living Docs ????????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_living_docs(
@@ -430,12 +434,12 @@ async def umlforge_living_docs(
     - You want a changelog-annotated diff of your diagrams
 
     NOT FOR:
-    - Generating diagrams for the first time → use umlforge_reverse_engineer
+    - Generating diagrams for the first time ? use umlforge_reverse_engineer
       (for existing codebases) or umlforge_stakeholder_arch (for new designs)
-    - Analysing a GitHub URL → use umlforge_reverse_engineer instead
-    - Generating diagrams without existing ones to update → use any other tool
+    - Analysing a GitHub URL ? use umlforge_reverse_engineer instead
+    - Generating diagrams without existing ones to update ? use any other tool
 
-    IMPORTANT: current_diagrams is REQUIRED — paste your existing Mermaid
+    IMPORTANT: current_diagrams is REQUIRED ? paste your existing Mermaid
     diagrams (including the ```mermaid fences). This tool cannot generate
     from scratch.
 
@@ -447,12 +451,12 @@ async def umlforge_living_docs(
       coverage quick wins
 
     Args:
-        current_diagrams: Your existing Mermaid diagram(s) — paste the full
+        current_diagrams: Your existing Mermaid diagram(s) ? paste the full
                           content including ```mermaid fences. REQUIRED.
         sprint_changes: What changed this sprint: new components, removed flows,
                         renamed services, modified behaviour.
         affected_files: Files or modules touched in this sprint/PR (optional).
-        report_mode: True → also produce Documentation Analysis Notes.
+        report_mode: True ? also produce Documentation Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -473,7 +477,7 @@ async def umlforge_living_docs(
     )
 
 
-# ── 6. ERD & Schema ───────────────────────────────────────────────────────────
+# ?? 6. ERD & Schema ???????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_erd_schema(
@@ -493,28 +497,28 @@ async def umlforge_erd_schema(
     - You want index recommendations and N+1 risk flags
 
     NOT FOR:
-    - Full codebase analysis (which may include DB) → use umlforge_reverse_engineer
-    - API flows between services → use umlforge_api_sequence
-    - Event-driven data pipelines → use umlforge_event_driven
+    - Full codebase analysis (which may include DB) ? use umlforge_reverse_engineer
+    - API flows between services ? use umlforge_api_sequence
+    - Event-driven data pipelines ? use umlforge_event_driven
 
     Produces:
     - erDiagram: entities with typed attributes, cardinality, FK labels
-    - Schema narrative: one paragraph per entity — purpose, index recommendations,
+    - Schema narrative: one paragraph per entity ? purpose, index recommendations,
       denormalisation decisions
     - Data integrity checklist: uniqueness, FK integrity, null policies, constraints
     - N+1 query risk flags
     - (report_mode=True) Design Score: Normalisation, Query Performance,
-      Data Integrity (A–F)
+      Data Integrity (A?F)
 
     Args:
         domain_description: What the database stores
                             (e.g. "E-commerce: users, products, orders, payments").
         entities: Known entities and key attributes
                   (e.g. "User(id, email, tier), Order(id, user_id, status, total)").
-        access_patterns: Most frequent read/write queries (optional — used for
+        access_patterns: Most frequent read/write queries (optional ? used for
                          index recommendations).
         db_technology: Database technology (default: PostgreSQL).
-        report_mode: True → also produce a Design Score report.
+        report_mode: True ? also produce a Design Score report.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -536,7 +540,7 @@ async def umlforge_erd_schema(
     )
 
 
-# ── 7. Threat Model ───────────────────────────────────────────────────────────
+# ?? 7. Threat Model ???????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_threat_model(
@@ -557,28 +561,28 @@ async def umlforge_threat_model(
     - You are preparing for a penetration test or compliance audit (GDPR, SOC2, PCI-DSS)
 
     NOT FOR:
-    - General architecture review → use umlforge_reverse_engineer with report_mode=True
-    - Deployment and infrastructure topology → use umlforge_deployment
-    - API flow design (without security focus) → use umlforge_api_sequence
+    - General architecture review ? use umlforge_reverse_engineer with report_mode=True
+    - Deployment and infrastructure topology ? use umlforge_deployment
+    - API flow design (without security focus) ? use umlforge_api_sequence
 
     Produces:
     - Auth flow sequence diagram: all failure paths, trust boundary annotations
     - Data flow diagram: sensitivity labels (PUBLIC / INTERNAL / CONFIDENTIAL / SECRET)
     - STRIDE threat table: all 6 categories with likelihood, mitigation, status
-    - Critical flags (🚨) for high-risk gaps
+    - Critical flags (??) for high-risk gaps
     - (report_mode=True) Security Assessment Report: threat landscape, critical
       vulnerability deep-dives, compliance status, remediation roadmap, risk score
 
     Args:
         system_description: What the system does, how users access it, main components.
         auth_mechanism: Auth in use (e.g. "JWT Bearer token", "API Key", "OAuth2 + PKCE").
-        trust_boundaries: Boundary crossings (e.g. ["public internet → API",
-                          "API → database"]) (optional).
+        trust_boundaries: Boundary crossings (e.g. ["public internet ? API",
+                          "API ? database"]) (optional).
         sensitive_data: Sensitive data types (e.g. ["user emails", "payment tokens"])
                         (optional).
         compliance_framework: Compliance scope (e.g. "GDPR", "NDPA 2023", "PCI-DSS")
                               (optional).
-        report_mode: True → also produce a Security Assessment Report.
+        report_mode: True ? also produce a Security Assessment Report.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -601,7 +605,7 @@ async def umlforge_threat_model(
     )
 
 
-# ── 8. Frontend Components ────────────────────────────────────────────────────
+# ?? 8. Frontend Components ????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_frontend_components(
@@ -621,25 +625,27 @@ async def umlforge_frontend_components(
     - You need to identify god components or prop drilling issues
 
     NOT FOR:
-    - Backend service interactions → use umlforge_api_sequence
-    - Full codebase including frontend → use umlforge_reverse_engineer
-    - Overall system architecture for stakeholders → use umlforge_stakeholder_arch
+    - Backend service interactions ? use umlforge_api_sequence
+    - Full codebase including frontend ? use umlforge_reverse_engineer
+    - Overall system architecture for stakeholders ? use umlforge_stakeholder_arch
 
     Produces:
     - Component hierarchy graph: parent-child, props (downward arrows),
       events/callbacks (upward dashed arrows), state store connections, API origins
-    - Interaction sequence diagram: most complex user flow — loading, success, error
+    - Interaction sequence diagram: most complex user flow ? loading, success, error
     - Component responsibility table: responsibilities, state owned, reusability flag
     - Accessibility note: ARIA roles needed, keyboard nav, WCAG risks
-    - God component flags (⚠️) for components with too many responsibilities
+    - God component flags (??) for components with too many responsibilities
     - (report_mode=True) Component Analysis Notes: coupling risks, refactoring quick wins
 
     Args:
         feature_description: The UI feature or page to diagram.
         framework: Frontend framework (default: React).
-        state_management: State approach — Redux, Zustand, Context API, Pinia (optional).
-        interactions: Key user interactions (optional — improves sequence diagram).
-        report_mode: True → also produce Component Analysis Notes.
+                   Supported: React, Vue, Angular, Svelte, Next.js.
+        state_management: State approach ? Redux, Zustand, Context API, Pinia (optional).
+        interactions: Key user interactions and data flows
+                      (e.g. "user submits form, table sorts on header click") (optional).
+        report_mode: True ? also produce Component Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -661,7 +667,7 @@ async def umlforge_frontend_components(
     )
 
 
-# ── 9. Event-Driven ───────────────────────────────────────────────────────────
+# ?? 9. Event-Driven ???????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_event_driven(
@@ -679,15 +685,15 @@ async def umlforge_event_driven(
     USE THIS WHEN:
     - Services communicate via events or messages (not direct API calls)
     - You are designing event sourcing, CQRS, or pub/sub patterns
-    - You want to model producer → broker → consumer flows with failure handling
+    - You want to model producer ? broker ? consumer flows with failure handling
 
     NOT FOR:
-    - Synchronous REST/gRPC calls between services → use umlforge_api_sequence
-    - Entity lifecycle (Order goes pending → active) → use umlforge_state_machine
-    - Full system architecture overview → use umlforge_stakeholder_arch
+    - Synchronous REST/gRPC calls between services ? use umlforge_api_sequence
+    - Entity lifecycle (Order goes pending ? active) ? use umlforge_state_machine
+    - Full system architecture overview ? use umlforge_stakeholder_arch
 
     Produces:
-    - Event flow sequence: producers → broker → consumers with ack,
+    - Event flow sequence: producers ? broker ? consumers with ack,
       retry loops (max N), dead-letter queue handling
     - Event catalogue table: name, producer, consumers, payload, idempotency, retention
     - Choreography vs orchestration assessment with coupling risk flags
@@ -701,7 +707,7 @@ async def umlforge_event_driven(
         consumers: Services that consume events (e.g. "Notification, Inventory, Analytics").
         broker: Message broker (e.g. "Kafka", "RabbitMQ", "AWS SQS/SNS") (optional).
         events: Named domain events (e.g. "order.placed, payment.failed") (optional).
-        report_mode: True → also produce Event System Analysis Notes.
+        report_mode: True ? also produce Event System Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -724,7 +730,7 @@ async def umlforge_event_driven(
     )
 
 
-# ── 10. Team Onboarding ───────────────────────────────────────────────────────
+# ?? 10. Team Onboarding ???????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_onboarding(
@@ -744,13 +750,13 @@ async def umlforge_onboarding(
     - You want gotchas, constraints, and workflow diagrams in one package
 
     NOT FOR:
-    - Analysing existing code for architectural problems → use umlforge_reverse_engineer
-    - Designing a new system → use umlforge_stakeholder_arch
-    - Documenting a specific API flow → use umlforge_api_sequence
+    - Analysing existing code for architectural problems ? use umlforge_reverse_engineer
+    - Designing a new system ? use umlforge_stakeholder_arch
+    - Documenting a specific API flow ? use umlforge_api_sequence
 
     Produces:
     - System overview (C4 Container): the lay-of-the-land on day one
-    - Developer workflow sequence: local dev → test → CI → staging → production
+    - Developer workflow sequence: local dev ? test ? CI ? staging ? production
       + most common debugging path
     - Gotchas & constraints table: what the code does, why, what breaks if changed
     - (report_mode=True) Onboarding Analysis Notes: coverage assessment,
@@ -759,9 +765,9 @@ async def umlforge_onboarding(
     Args:
         system_description: High-level description of the system.
         tech_stack: Technologies in the stack (e.g. "FastAPI, PostgreSQL, React, Railway").
-        key_workflows: 2–3 flows a new developer must understand first.
+        key_workflows: 2?3 flows a new developer must understand first.
         pain_points: Known gotchas, non-obvious decisions (optional).
-        report_mode: True → also produce Onboarding Analysis Notes.
+        report_mode: True ? also produce Onboarding Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -783,7 +789,7 @@ async def umlforge_onboarding(
     )
 
 
-# ── 11. AI Agent ──────────────────────────────────────────────────────────────
+# ?? 11. AI Agent ??????????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_ai_agent(
@@ -800,13 +806,13 @@ async def umlforge_ai_agent(
 
     USE THIS WHEN:
     - You are building a system where LLMs call tools or hand off to other agents
-    - You want to visualise a multi-agent workflow (planner → researcher → writer)
+    - You want to visualise a multi-agent workflow (planner ? researcher ? writer)
     - You need to document tool access, memory strategy, and failure behaviour
 
     NOT FOR:
-    - General system architecture → use umlforge_stakeholder_arch
-    - Standard synchronous API flows → use umlforge_api_sequence
-    - Event-driven pipelines without LLM agents → use umlforge_event_driven
+    - General system architecture ? use umlforge_stakeholder_arch
+    - Standard synchronous API flows ? use umlforge_api_sequence
+    - Event-driven pipelines without LLM agents ? use umlforge_event_driven
 
     Produces:
     - Agent pipeline sequence: agents as participants with model names,
@@ -814,7 +820,7 @@ async def umlforge_ai_agent(
     - Agent component map: agents, tool deps, memory, external integrations
     - Agent responsibility matrix: model, role, tools, inputs, outputs, failure behaviour
     - Risk & observability note: hallucination hotspots, validation gates, logging points
-    - Tool overload flags (⚠️) for agents with more than 5 tools
+    - Tool overload flags (??) for agents with more than 5 tools
     - (report_mode=True) Agent Pipeline Analysis Notes: pipeline risks,
       coverage gaps, reliability quick wins
 
@@ -824,11 +830,11 @@ async def umlforge_ai_agent(
         agents: Agents and their roles
                 (e.g. "Planner [claude-opus-4], Researcher [claude-sonnet-4]").
         tools_available: Tools agents can call (e.g. "web_search, execute_code") (optional).
-        orchestration_approach: Coordination strategy — sequential, DAG, hierarchical,
+        orchestration_approach: Coordination strategy ? sequential, DAG, hierarchical,
                                 parallel fan-out (optional).
-        memory_strategy: Memory approach — shared context, vector memory, Redis,
+        memory_strategy: Memory approach ? shared context, vector memory, Redis,
                          none (optional).
-        report_mode: True → also produce Agent Pipeline Analysis Notes.
+        report_mode: True ? also produce Agent Pipeline Analysis Notes.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -851,7 +857,7 @@ async def umlforge_ai_agent(
     )
 
 
-# ── 12. Deployment ────────────────────────────────────────────────────────────
+# ?? 12. Deployment ????????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_deployment(
@@ -872,21 +878,21 @@ async def umlforge_deployment(
     - You are planning infrastructure, disaster recovery, or a DevOps handover
 
     NOT FOR:
-    - Application-level architecture (how code is structured) → use umlforge_reverse_engineer
-    - Security threat modelling → use umlforge_threat_model
-    - How services call each other at the API level → use umlforge_api_sequence
+    - Application-level architecture (how code is structured) ? use umlforge_reverse_engineer
+    - Security threat modelling ? use umlforge_threat_model
+    - How services call each other at the API level ? use umlforge_api_sequence
 
     Produces:
     - Deployment diagram: nodes, artefacts, network paths, protocol/port labels,
       internet-facing vs internal traffic distinction
-    - CI/CD pipeline flow: commit → build → test → staging → production,
+    - CI/CD pipeline flow: commit ? build ? test ? staging ? production,
       automated gates, manual approvals, rollback paths
     - Deployment environment table: infrastructure, triggers, data classification,
       monitoring, rollback strategy per environment
     - Infrastructure risk note: SPOFs, missing redundancy, environment parity gaps
-    - Observability gap flags (⚠️) for services without /health endpoints
+    - Observability gap flags (??) for services without /health endpoints
     - (report_mode=True) Infrastructure Health Report: reliability score,
-      observability score, deployment safety score (A–F)
+      observability score, deployment safety score (A?F)
 
     Args:
         system_name: Name of the system (e.g. "UML Forge API").
@@ -894,7 +900,7 @@ async def umlforge_deployment(
         environments: Deployment environments (e.g. "development, staging, production").
         services: Services and infrastructure (e.g. "FastAPI API, Next.js, PostgreSQL, Redis").
         cicd_tool: CI/CD tool (e.g. "GitHub Actions", "GitLab CI") (optional).
-        report_mode: True → also produce an Infrastructure Health Report.
+        report_mode: True ? also produce an Infrastructure Health Report.
                      Pro/Team/Enterprise only.
     """
     config = load_config()
@@ -917,7 +923,7 @@ async def umlforge_deployment(
     )
 
 
-# ── 13. Legacy Migrate ───────────────────────────────────────────────────────
+# ?? 13. Legacy Migration ?????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_legacy_migration(
@@ -926,6 +932,7 @@ async def umlforge_legacy_migration(
     source_language: str = "COBOL",
     target_language: str = "Python",
     system_purpose: str = "",
+    github_token: str | None = None,
     report_mode: bool = False,
     ctx: Context | None = None,
 ) -> str:
@@ -940,23 +947,23 @@ async def umlforge_legacy_migration(
     - You are planning or pitching a modernisation project and need a migration roadmap
 
     NOT FOR:
-    - Analysing modern codebases → use umlforge_reverse_engineer
-    - Generating translated source code (Option B — future feature)
-    - Database schema design → use umlforge_erd_schema
+    - Analysing modern codebases ? use umlforge_reverse_engineer
+    - Generating translated source code (Option B ? future feature)
+    - Database schema design ? use umlforge_erd_schema
 
     Produces:
     - Legacy structure diagram: program divisions, sections, modules, data stores,
       file I/O, external interfaces (as the system exists today)
     - Modern equivalent diagram: proposed clean-architecture rebuild in the target
       language with idiomatic layer names and structure
-    - Migration roadmap: 6-phase plan (Understand → Extract → Data → Logic →
-      Test Parity → Cutover) with duration estimates and exit criteria
+    - Migration roadmap: 6-phase plan (Understand ? Extract ? Data ? Logic ?
+      Test Parity ? Cutover) with duration estimates and exit criteria
     - Complexity & risk flags: global state, file I/O coupling, implicit typing,
       unstructured control flow, vendor extensions, interface contracts
     - (report_mode=True) Legacy Migration Assessment: complexity scores, recommended
-      strategy, tooling recommendations, risk assessment (A–F per dimension)
+      strategy, tooling recommendations, risk assessment (A?F per dimension)
 
-    Provide EITHER github_url OR legacy_code — not both.
+    Provide EITHER github_url OR legacy_code ? not both.
 
     Args:
         legacy_code: Paste the legacy source code directly.
@@ -972,7 +979,9 @@ async def umlforge_legacy_migration(
         system_purpose: Brief description of what the program does in production
                         (e.g. "monthly payroll batch", "order entry OLTP"). Optional
                         but improves diagram labels and migration advice.
-        report_mode: True → also produce a Legacy Migration Assessment with
+        github_token: GitHub personal access token (repo scope) ? only needed
+                      for private repositories. Never stored or logged.
+        report_mode: True ? also produce a Legacy Migration Assessment with
                      complexity scores and tooling recommendations.
                      Pro/Team/Enterprise only.
     """
@@ -983,6 +992,7 @@ async def umlforge_legacy_migration(
         "source_language": source_language,
         "target_language": target_language,
         "system_purpose": system_purpose,
+        "github_token": github_token,
         "report_mode": report_mode,
     }
     if config.guided_mode and ctx is not None:
@@ -996,7 +1006,7 @@ async def umlforge_legacy_migration(
     )
 
 
-# ── 14. Suggest ───────────────────────────────────────────────────────────────
+# ?? 14. Suggest ???????????????????????????????????????????????????????????????
 
 @mcp.tool(annotations=_READ_ONLY)
 async def umlforge_suggest(task_description: str) -> str:
@@ -1005,11 +1015,11 @@ async def umlforge_suggest(task_description: str) -> str:
 
     Describe what you want to achieve in plain English. This tool will:
     1. Identify the right tool for your goal
-    2. Return the EXACT tool call with parameters pre-filled — ready to execute
+    2. Return the EXACT tool call with parameters pre-filled ? ready to execute
     3. Explain why this tool fits and suggest an alternative
 
     USE THIS WHEN:
-    - You are not sure which of the 13 tools to use
+    - You are not sure which of the 14 tools to use
     - You want to describe a goal ("analyse this repo", "model our order lifecycle")
       and get a ready-to-run recommendation
     - You want to avoid trial and error with the wrong tool
@@ -1026,7 +1036,8 @@ async def umlforge_suggest(task_description: str) -> str:
     Args:
         task_description: Plain-English description of what you want to achieve.
                           Include any relevant details: URLs, entity names, service
-                          names, tech stack — the more context, the better the
+                          names, tech stack ? the more context, the better the
                           pre-filled parameters.
     """
     return await api_client.suggest(task_description)
+

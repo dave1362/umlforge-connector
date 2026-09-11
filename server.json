@@ -19,7 +19,7 @@
       "environmentVariables": [
         {
           "name": "UMLFORGE_API_KEY",
-          "description": "Your UML Forge API key — get one free at https://umlforge.dev",
+          "description": "Your UML Forge API key ? get one free at https://umlforge.dev",
           "isRequired": true,
           "isSecret": true,
           "format": "string"
@@ -28,3 +28,4 @@
     }
   ]
 }
+
