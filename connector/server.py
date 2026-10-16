@@ -1,7 +1,7 @@
 """
 UML Forge Connector — MCP Server Entry Point
 
-Starts the FastMCP stdio server with all 13 UML Forge tools registered.
+Starts the FastMCP stdio server with all 14 UML Forge tools registered.
 
 Installation:
     uvx umlforge          # recommended — isolated, no pip install needed

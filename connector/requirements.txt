@@ -3,7 +3,7 @@
 # Python 3.12.x required (tomllib is stdlib in 3.11+, no extra dep needed)
 
 # ── MCP ────────────────────────────────────────────────
-mcp[cli]>=1.27.0,<2.0.0
+mcp[cli]>=1.30.0,<2.0.0
 
 # ── HTTP Client ────────────────────────────────────────
 httpx>=0.27.0,<1.0.0
