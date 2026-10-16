@@ -1,7 +1,7 @@
 """
 UML Forge Connector — MCP Tool Definitions
 
-Registers all 14 UML Forge tools with the FastMCP server.
+Registers all 15 UML Forge tools with the FastMCP server.
 
 CRITICAL CONSTRAINTS (enforced by architecture):
   - ZERO business logic in this file
@@ -197,7 +197,7 @@ async def _generate(
     guided_mode: bool = False,
 ) -> str:
     task = asyncio.ensure_future(
-        api_client.generate(tool, params, guided_mode=guided_mode)
+        api_client.generate_job(tool, params, guided_mode=guided_mode)
     )
     if ctx is None:
         return await task
@@ -1072,7 +1072,7 @@ async def umlforge_suggest(task_description: str) -> str:
     3. Explain why this tool fits and suggest an alternative
 
     USE THIS WHEN:
-    - You are not sure which of the 14 tools to use
+    - You are not sure which tool to use
     - You want to describe a goal ("analyse this repo", "model our order lifecycle")
       and get a ready-to-run recommendation
     - You want to avoid trial and error with the wrong tool
@@ -1093,3 +1093,46 @@ async def umlforge_suggest(task_description: str) -> str:
                           pre-filled parameters.
     """
     return await api_client.suggest(task_description)
+
+
+# ── 15. Get result ────────────────────────────────────────────────────────────
+
+@mcp.tool(annotations=_READ_ONLY)
+async def umlforge_get_result(job_id: str, ctx: Context | None = None) -> str:
+    """
+    Retrieve the result of a UML Forge generation that was still running.
+
+    USE THIS WHEN:
+    - Another umlforge_* tool replied "still generating" and gave you a job id
+    - You want to fetch a result you started earlier (kept for one hour)
+
+    NOT FOR:
+    - Starting a new diagram → call the umlforge_* diagram tool you need
+    - Choosing a tool → use umlforge_suggest
+
+    Waits up to about 45 seconds for the job. If it is still running, it replies
+    "still generating" again with the same job id: call this tool again.
+
+    Args:
+        job_id: The job id from the "still generating" reply.
+    """
+    task = asyncio.ensure_future(api_client.get_result(job_id))
+    if ctx is None:
+        return await task
+    elapsed = 0.0
+    try:
+        while True:
+            done, _ = await asyncio.wait({task}, timeout=_HEARTBEAT_SECONDS)
+            if done:
+                return task.result()
+            elapsed += _HEARTBEAT_SECONDS
+            try:
+                await ctx.report_progress(
+                    progress=elapsed,
+                    message=f"Waiting for result... {int(elapsed)}s",
+                )
+            except Exception:
+                pass
+    finally:
+        if not task.done():
+            task.cancel()

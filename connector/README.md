@@ -5,7 +5,7 @@
 **Architecture intelligence, security analysis, and living documentation — inside your coding agent.**
 
 [UML Forge](https://umlforge.dev) gives Claude Code, Cursor, Windsurf, and any
-MCP-compatible coding agent a suite of 13 specialised tools for producing
+MCP-compatible coding agent a suite of 15 tools (14 diagram tools plus `umlforge_get_result`) for producing
 professional UML diagrams from your codebase, schema, or architecture
 descriptions.
 
@@ -45,9 +45,21 @@ Get your API key at [umlforge.dev](https://umlforge.dev).
 | `umlforge_stakeholder_arch` | C4 context diagrams for investors, CTOs, and non-technical stakeholders |
 | `umlforge_living_docs` | Update existing diagrams to reflect sprint or PR changes |
 | `umlforge_onboarding` | Day-one knowledge-transfer package for new team members |
+| `umlforge_legacy_migration` | Legacy structure + modern architecture diagrams and 6-phase migration roadmap from COBOL, Fortran, ABAP, RPG, and other legacy languages |
+| `umlforge_get_result` | Retrieve a generation that was still running (see *Long-running generations*) |
 
-All tools accept `report_mode=True` to generate a written analysis report
-alongside the diagram.
+All diagram tools accept `report_mode=True` to generate a written analysis report
+alongside the diagram. Leave `report_mode` unset to follow your account's saved
+preference (the dashboard toggle); `report_mode=False` forces diagrams only.
+
+## Long-running generations
+
+A detailed diagram can take a minute or two, and some MCP clients cancel any tool
+call after about 60 seconds. UML Forge tools therefore wait up to 45 seconds for the
+result. If a diagram is still generating, the tool replies with a job id and
+`umlforge_get_result` retrieves it when it is ready (results are kept for one hour).
+Clients with longer timeouts can wait longer by setting `UMLFORGE_WAIT_SECONDS`
+(5-200) in the `env` block of your MCP configuration.
 
 ## Requirements
 
